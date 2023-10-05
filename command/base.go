@@ -15,6 +15,8 @@ import (
 	"sync"
 	"time"
 
+	hcpengine "github.com/hashicorp/hcp-vault-engine-poc"
+
 	"github.com/hashicorp/vault/api"
 	"github.com/hashicorp/vault/command/token"
 	"github.com/hashicorp/vault/helper/namespace"
@@ -182,6 +184,15 @@ func (c *BaseCommand) Client() (*api.Client, error) {
 		if len(forbiddenHeaders) > 0 {
 			return nil, fmt.Errorf("failed to setup Headers[%s]: Header starting by 'X-Vault-' are for internal usage only", strings.Join(forbiddenHeaders, ", "))
 		}
+	}
+
+	hcpCookie, err := hcpengine.GetHCPCookie()
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to get hcp cookie from cache")
+	}
+
+	if hcpCookie != nil {
+		client.SetHCPCookie(hcpCookie)
 	}
 
 	c.client = client

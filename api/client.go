@@ -589,6 +589,7 @@ type Client struct {
 	requestCallbacks      []RequestCallback
 	responseCallbacks     []ResponseCallback
 	replicationStateStore *replicationStateStore
+	hcpCookie             *http.Cookie
 }
 
 // NewClient returns a new client for the given configuration.
@@ -1025,6 +1026,14 @@ func (c *Client) SetToken(v string) {
 	c.token = v
 }
 
+// SetHCPCookie sets the hcp cookie directly. This won't perform any auth
+// verification, it simply sets the token properly for future requests.
+func (c *Client) SetHCPCookie(v *http.Cookie) {
+	c.modifyLock.Lock()
+	defer c.modifyLock.Unlock()
+	c.hcpCookie = v
+}
+
 // ClearToken deletes the token if it is set or does nothing otherwise.
 func (c *Client) ClearToken() {
 	c.modifyLock.Lock()
@@ -1298,6 +1307,8 @@ func (c *Client) NewRequest(method, requestPath string) *Request {
 		ClientToken: token,
 		Params:      make(map[string][]string),
 	}
+
+	req.HCPCookie = c.hcpCookie
 
 	var lookupPath string
 	switch {
